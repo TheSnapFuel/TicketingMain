@@ -1,0 +1,11 @@
+.expanded > ** > .icon-label {
+    display: block !important;
+}
+/* 
+.side-bg {
+    background: linear-gradient(179.37deg, rgba(88, 121, 124, 0.6) 0.07%, rgba(54, 57, 63, 0.4) 99.88%);
+} */
+
+.nav-active{
+    @apply text-accent;
+}
