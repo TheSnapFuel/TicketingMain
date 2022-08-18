@@ -1,0 +1,12 @@
+.item-card {
+    background: linear-gradient(179.14deg, rgba(109, 150, 145, 0.6) -38.46%, rgba(60, 82, 120, 0.4) 111.28%);
+    backdrop-filter: blur(14.7612px);
+    
+    /* Note: backdrop-filter has minimal browser support */
+    border-radius: 8.85669px;
+}
+
+.highlight {
+    background: #22A6B3;
+    filter: blur(20rem);
+}
