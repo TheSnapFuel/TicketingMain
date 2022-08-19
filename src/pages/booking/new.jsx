@@ -147,10 +147,7 @@ function CreateEvent() {
 		  console.log('Error uploading file: ', error)
 		}  
 	  }
-	async function water() {
-		console.log(supply)
-	}
-	async function listNFTForSale() {
+	async function listTicketForSale() {
 		const url = await uploadToIPFS()
 		const web3Modal = new Web3Modal()
 		const connection = await web3Modal.connect()
@@ -162,11 +159,11 @@ function CreateEvent() {
 		let contract = new ethers.Contract(marketplaceAddress, Market.abi, signer)
 		let listingPrice = await contract.getListingPrice()
 		listingPrice = listingPrice.toString()
+
 		let transaction = await contract.createToken(url, price, { value: listingPrice })
 		await transaction.wait()
-		
-		router.push('/')
-	}
+		router.push('/booking')
+		}
 
 	return (
 		<div className="p-4 relative">
@@ -215,7 +212,7 @@ function CreateEvent() {
 						</div>
 					</FadeInWhenVisible>
 				) : (
-					<form className="w-full my-4 p-4 block">
+					<div className="w-full my-4 p-4 block">
 						<div className="flex relative">
 							<div
 								className="w-full h-64 bg-cover bg-center rounded-3xl"
@@ -523,22 +520,15 @@ function CreateEvent() {
 											onClick={() => 
 												{
 													// setSuccess(true);
-												uploadToIPFS()}}>
+												listTicketForSale()}}>
 											Create
 										</button>
 									</div>
 								</div>
 							</div>
 						</div>
-					</form>
+					</div>
 				)}
-									<button
-					className="w-40 mb-2 bg-accent py-2 px-6 rounded-xl shadow-sm shadow-accent transform hover:scale-110 duration-200"
-					onClick={() => 
-						{
-						uploadToIPFS()}}>
-					check
-				</button>
 			</div>
 		</div>
 	);

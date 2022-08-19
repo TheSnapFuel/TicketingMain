@@ -72,6 +72,10 @@ contract Market is ERC721URIStorage {
       );
     }
 
+    function getListingPrice() public view returns (uint256) {
+      return listingPrice;
+    }
+
     function fetchTickets() public view returns (Ticket[] memory) {
       uint itemCount = _tokenIds.current();
       uint unsoldItemCount = _tokenIds.current() - _itemsSold.current();
