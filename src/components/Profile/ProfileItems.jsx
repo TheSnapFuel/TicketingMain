@@ -3,6 +3,13 @@ import { useRef, useState } from 'react';
 import ItemCard from './ItemCard';
 import styles from '../../components/Booking/Booking.module.scss';
 
+import { ethers } from 'ethers'
+import { create as ipfsHttpClient } from 'ipfs-http-client'
+import { useRouter } from 'next/router'
+import Web3Modal from 'web3modal'
+
+const client = ipfsHttpClient('https://ipfs.infura.io:5001/api/v0')
+
 const ProfileItems = () => {
 	const rowRef = useRef(null);
 	const [isMoved, setIsMoved] = useState(false);

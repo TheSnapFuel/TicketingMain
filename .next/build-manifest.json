@@ -15,11 +15,6 @@
   ],
   "rootMainFiles": [],
   "pages": {
-    "/[slug]": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/[slug].js"
-    ],
     "/_app": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
@@ -30,20 +25,10 @@
       "static/chunks/main.js",
       "static/chunks/pages/_error.js"
     ],
-    "/booking": [
+    "/booking/new": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/booking.js"
-    ],
-    "/marketplace": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/marketplace.js"
-    ],
-    "/profile": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/profile.js"
+      "static/chunks/pages/booking/new.js"
     ]
   },
   "ampFirstPages": []

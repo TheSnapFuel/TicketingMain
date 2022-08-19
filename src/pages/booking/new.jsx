@@ -4,14 +4,52 @@ import { BsCalendar2Date } from 'react-icons/bs';
 import Link from 'next/link';
 import FadeInWhenVisible from '../../utils/FadeInWhenVisible';
 import NumberInput from '../../utils/NumberInput';
+import DatePicker from "react-datepicker";
+import moment from 'moment';
+
+import { useState } from 'react'
+import { ethers } from 'ethers'
+import { create as ipfsHttpClient } from 'ipfs-http-client'
+import { useRouter } from 'next/router'
+import Web3Modal from 'web3modal'
+import {
+  marketplaceAddress
+} from '../../../config'
+import Market from '../../../artifacts/contracts/Market.sol/Market.json'
+import "react-datepicker/dist/react-datepicker.css";
+
 
 function CreateEvent() {
+    const [selectedFile, setSelectedFile] = useState();
+    const [checkFile, setCheckFile] = useState(false);
+
+	const [fileUrl, setFileUrl] = useState(null)
+	const router = useRouter()
+
+	const projectId = '2DVzNQ8xp6M2rGi4zNQyjcx2R5Z';
+	const projectSecret = '5593327fe5e787463b314b16d7ce21aa';
+	const auth = 'Basic ' + Buffer.from(projectId + ':' + projectSecret).toString('base64');
+	
+
+	const client = ipfsHttpClient({
+		host: 'ipfs.infura.io',
+		port: 5001,
+		protocol: 'https',
+		headers: {
+			authorization: auth,
+		},
+	});
+
+	
 	let eventTypes = ['Concert', 'Sports', 'Comedy Night'];
 	let paymentTypes = ['Stripe', 'Paypal', 'Cash'];
 
+	const [formInput, updateFormInput] = useState({name: '', hrs: '', mins: '', organizer: '', description: '', eventType: '', price: ''});
 	const [success, setSuccess] = React.useState(false);
 	const [supply, setSupply] = React.useState(0);
 	const [link, setLink] = React.useState('/booking');
+	const [fromDate, setfromDate] = useState(new Date());
+	const [toDate, settoDate] = useState(new Date());
 
 	const [timings, setTimings] = React.useState([
 		'12:00 PM',
@@ -59,6 +97,76 @@ function CreateEvent() {
 			true
 		);
 	});
+
+
+	async function onChange(e) {
+		setSelectedFile(e.target.files[0]);
+        setCheckFile(true);
+		const file = e.target.files[0]
+		try {
+		  const added = await client.add(
+			file,
+			{
+			  progress: (prog) => console.log(`received: ${prog}`)
+			}
+		  )
+		  const url = `https://ipfs.infura.io/ipfs/${added.path}`
+		  setFileUrl(url)
+		} catch (error) {
+		  console.log('Error uploading file: ', error)
+		}  
+	}
+
+
+	async function uploadToIPFS() {
+		// const { supply } = supply
+		// const { timings} = timings
+		// const { locations } = locations
+		// const data = JSON.stringify({
+		// 	name, length, organizer, description, fromDate, toDate, location, ticket, price, image: fileUrl
+		//   })
+		// console.log(data)
+		// 	const [formInput, updateFormInput] = useState({name: '', hrs: '', mins: '', organizer: '', description: '', eventType: '', fromDate: '', toDate: '', price: ''});
+
+		const{name, hrs, mins, organizer, description, eventType, price} = formInput
+		const fromDateFormat = moment(fromDate).format('DD-MM-YYYY')
+		const toDateFormat = moment(toDate).format('DD-MM-YYYY')
+		if (!name || !hrs || !mins || !organizer || !description || !eventType || !fromDateFormat || !toDateFormat || !price || !supply || !timings || !locations) return;
+		console.log(1)
+		const data = JSON.stringify({
+			name, length: `${hrs}:${mins}`, organizer, description, supply, timings, location, price, image: fileUrl
+		  })
+		/* first, upload to IPFS */
+		try {
+		  const added = await client.add(data)
+		  const url = `https://snapfuel.infura-ipfs.io/ipfs/${added.path}`
+		  /* after file is uploaded to IPFS, return the URL to use it in the transaction */
+		  console.log(url)
+		  return url
+		} catch (error) {
+		  console.log('Error uploading file: ', error)
+		}  
+	  }
+	async function water() {
+		console.log(supply)
+	}
+	async function listNFTForSale() {
+		const url = await uploadToIPFS()
+		const web3Modal = new Web3Modal()
+		const connection = await web3Modal.connect()
+		const provider = new ethers.providers.Web3Provider(connection)
+		const signer = provider.getSigner()
+
+		/* next, create the item */
+		const price = ethers.utils.parseUnits(formInput.price, 'ether')
+		let contract = new ethers.Contract(marketplaceAddress, Market.abi, signer)
+		let listingPrice = await contract.getListingPrice()
+		listingPrice = listingPrice.toString()
+		let transaction = await contract.createToken(url, price, { value: listingPrice })
+		await transaction.wait()
+		
+		router.push('/')
+	}
 
 	return (
 		<div className="p-4 relative">
@@ -124,12 +232,12 @@ function CreateEvent() {
 										className="flex flex-col justify-center items-center group w-full h-full bg-black rounded-lg opacity-90 hover:opacity-100 duration-200 cursor-pointer">
 										<div className="flex flex-col justify-center items-center w-full h-full p-4">
 											<img
-												src="/images/icons/Cameras.svg"
+												src={selectedFile ? URL.createObjectURL(selectedFile) : "/images/icons/Cameras.svg"}
 												alt="camera"
-												className="opacity-80 group-hover:opacity-100 duration-200"
+												className="opacity-80 group-hover:opacity-100 duration-200 w-full h-full"
 											/>
 										</div>
-										<input id="dropzone-file" type="file" className="hidden" />
+										<input id="dropzone-file" type="file" className="hidden" onChange={onChange}/>
 									</label>
 								</div>
 							</div>
@@ -140,16 +248,28 @@ function CreateEvent() {
 									<label htmlFor="eventname">Event Name:</label>
 								</div>
 								<div className="col-span-12 md:col-span-6">
-									<input className="w-full inp" type="text" name="eventname" />
+									<input 
+										className="w-full inp" 
+										type="text" 
+										name="eventname" 
+										onChange={e => updateFormInput({ ...formInput, name: e.target.value })}/>
 								</div>
 								<div className="col-span-4"></div>
 								<div className="col-span-12 md:col-span-2 flex flex-col justify-center">
 									<label htmlFor="hr">Length of Event:</label>
 								</div>
 								<div className="col-span-12 md:col-span-6 flex items-center">
-									<input className="w-12 inp" type="text" name="eventname" />
+									<input 
+										className="w-12 inp" 
+										type="text" 
+										name="eventname" 
+										onChange={e => updateFormInput({ ...formInput, hrs: e.target.value })}/>
 									<p className="mx-2">hr</p>
-									<input className="w-12 inp" type="text" name="eventname" />
+									<input 
+										className="w-12 inp" 
+										type="text" 
+										name="eventname"
+										onChange={e => updateFormInput({ ...formInput, mins: e.target.value })} />
 									<p className="mx-2">min</p>
 								</div>
 								<div className="col-span-4"></div>
@@ -161,7 +281,8 @@ function CreateEvent() {
 										<input
 											className="w-full inp"
 											type="text"
-											name="organizer"></input>
+											name="organizer"
+											onChange={e => updateFormInput({ ...formInput, organizer: e.target.value })}></input>
 									</div>
 								</div>
 								<div className="col-span-4"></div>
@@ -171,11 +292,14 @@ function CreateEvent() {
 								<div className="col-span-12">
 									<textarea
 										className="w-full inp"
-										name="description"></textarea>
+										name="description"
+										onChange={e => updateFormInput({ ...formInput, description: e.target.value })}></textarea>
 								</div>
 								<div className="col-span-12 mt-4">
 									<label htmlFor="description">Event Type:</label>
-									<select className="w-full select-inp mt-4">
+									<select 
+										className="w-full select-inp mt-4"
+										onChange={e => updateFormInput({ ...formInput, eventType: e.target.value })}>
 										<option value="">Select Event Type</option>
 										{eventTypes.map((type, index) => (
 											<option key={index} value={type}>
@@ -195,14 +319,22 @@ function CreateEvent() {
 										<div className="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
 											<BsCalendar2Date className="w-5 h-5 text-accent" />
 										</div>
-										<input
+										{/* <input
 											type="date"
 											className="date-inp block w-full"
 											name="fromDate"
 											onClick={e => {
 												e.target.showPicker();
 											}}
-										/>
+											onChange={e => updateFormInput({ ...formInput, fromDate: e.target.value })}
+										/> */}
+										<DatePicker selected={fromDate} 
+											className = "date-inp block w-full"
+											onChange={(date) => {
+													const d = new Date(date);
+													console.log(d);
+													setfromDate(d);
+												  }}/>
 									</div>{' '}
 									<label htmlFor="toDate" className="ml-6 mr-4 text-[#D9D9D9]">
 										To:{' '}
@@ -211,14 +343,22 @@ function CreateEvent() {
 										<div className="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
 											<BsCalendar2Date className="w-5 h-5 text-accent" />
 										</div>
-										<input
+										{/* <input
 											type="date"
 											className="date-inp block w-full"
 											name="toDate"
 											onClick={e => {
 												e.target.showPicker();
 											}}
-										/>
+											onChange={e => updateFormInput({ ...formInput, toDate: e.target.value })}
+										/> */}
+										<DatePicker selected={toDate} 
+											className = "date-inp block w-full"
+											onChange={(date) => {
+													const d = new Date(date);
+													console.log(d);
+													settoDate(d);
+												  }}/>
 									</div>
 								</div>
 								<div className="col-span-12 mt-4">
@@ -372,6 +512,7 @@ function CreateEvent() {
 												type="number"
 												id="price"
 												style={{ paddingLeft: '2rem' }}
+												onChange={e => updateFormInput({ ...formInput, price: e.target.value })}
 											/>
 										</div>
 									</div>
@@ -379,7 +520,10 @@ function CreateEvent() {
 										<button
 											className="w-40 mb-2 bg-accent py-2 px-6 rounded-xl shadow-sm shadow-accent transform hover:scale-110 duration-200"
 											type="submit"
-											onClick={() => setSuccess(true)}>
+											onClick={() => 
+												{
+													// setSuccess(true);
+												uploadToIPFS()}}>
 											Create
 										</button>
 									</div>
@@ -388,6 +532,13 @@ function CreateEvent() {
 						</div>
 					</form>
 				)}
+									<button
+					className="w-40 mb-2 bg-accent py-2 px-6 rounded-xl shadow-sm shadow-accent transform hover:scale-110 duration-200"
+					onClick={() => 
+						{
+						uploadToIPFS()}}>
+					check
+				</button>
 			</div>
 		</div>
 	);

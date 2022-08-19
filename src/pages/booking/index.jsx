@@ -7,6 +7,7 @@ import Scrollspy from 'react-scrollspy';
 import styles from '../../components/Booking/Booking.module.scss';
 import Link from 'next/link';
 
+
 function Booking() {
 	const itemData = [
 		{
