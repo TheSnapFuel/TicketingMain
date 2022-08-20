@@ -17,7 +17,7 @@ import {
 } from '../../../config'
 import Market from '../../../artifacts/contracts/Market.sol/Market.json'
 import "react-datepicker/dist/react-datepicker.css";
-
+import {IPFS} from "ipfs";
 
 function CreateEvent() {
     const [selectedFile, setSelectedFile] = useState();
@@ -110,11 +110,63 @@ function CreateEvent() {
 			  progress: (prog) => console.log(`received: ${prog}`)
 			}
 		  )
-		  const url = `https://ipfs.infura.io/ipfs/${added.path}`
+		  const url = `https://snapfuel.infura-ipfs.io/ipfs/${added.path}`
 		  setFileUrl(url)
 		} catch (error) {
 		  console.log('Error uploading file: ', error)
 		}  
+	}
+	async function createTickets(name,hrs,mins,organizer,description,eventType,price,supply,timings,locations,fromDate,toDate, fileUrl) {
+		// create tickets with json schema
+		// and return json
+		const tickets = []
+		var count = 0;
+		const numDays = moment(toDate).diff(moment(fromDate), 'days', false)
+		const formattedInitialDate = moment(fromDate).format('YYYY-MM-DD')
+		const formattedFinallDate = moment(toDate).format('YYYY-MM-DD')
+		for(let day = 0; day < numDays; day++)
+		{
+			for (const location of locations)
+			{
+				for (const timing of timings)
+				// for each timing
+				{
+					for (let i = 0; i < supply; i++) 
+					{
+
+						tickets.push(
+							{
+								path: `tickets/${count}.json`,
+								content: JSON.stringify(
+									{
+										"name": "Seat No " + i,
+										"descrption": description,
+										"properties": {
+											"day": day,
+											"hrs": hrs,
+											"mins": mins,
+											"organizer": organizer,
+											"eventType": eventType,
+											"price": price,
+											"supply": supply,
+											"timing": timing,
+											"locations": location,
+											"fromDate": formattedInitialDate,
+											"toDate": formattedFinallDate,
+											"AvailableLocs": locations,
+											"AvailableTimings": timings,
+											"image": fileUrl,
+										}
+									}
+								)
+							}
+						)
+						count++;
+					}
+				}
+			}
+		}
+		return tickets
 	}
 
 
@@ -131,16 +183,24 @@ function CreateEvent() {
 		const{name, hrs, mins, organizer, description, eventType, price} = formInput
 		const fromDateFormat = moment(fromDate).format('DD-MM-YYYY')
 		const toDateFormat = moment(toDate).format('DD-MM-YYYY')
-		if (!name || !hrs || !mins || !organizer || !description || !eventType || !fromDateFormat || !toDateFormat || !price || !supply || !timings || !locations) return;
+		if (!name || !hrs || !mins || !organizer || !description || !eventType || !fromDateFormat || !toDateFormat || !price || !supply || !timings || !locations ) return;
 		console.log(1)
 		const data = JSON.stringify({
 			name, length: `${hrs}:${mins}`, organizer, description, supply, timings, location, price, image: fileUrl
 		  })
 		/* first, upload to IPFS */
 		try {
-		  const added = await client.add(data)
-		  const url = `https://snapfuel.infura-ipfs.io/ipfs/${added.path}`
-		  /* after file is uploaded to IPFS, return the URL to use it in the transaction */
+		//   const added = await client.add(data)
+		//   const url = `https://snapfuel.infura-ipfs.io/ipfs/${added.path}`
+		//   /* after file is uploaded to IPFS, return the URL to use it in the transaction */
+		//   console.log(url)
+		  const files = await createTickets(name,hrs,mins,organizer,description,eventType,price,supply,timings,locations,fromDate,toDate,fileUrl)
+		  const addedFiles = new Array()
+		  for await (const result of client.addAll(files)) {
+			  addedFiles.push(result)
+		  }
+		  const fileCID = addedFiles[addedFiles.length - 1].cid.toString()
+		  const url = `https://snapfuel.infura-ipfs.io/ipfs/${fileCID}`
 		  console.log(url)
 		  return url
 		} catch (error) {
@@ -520,7 +580,9 @@ function CreateEvent() {
 											onClick={() => 
 												{
 													// setSuccess(true);
-												listTicketForSale()}}>
+												// listTicketForSale()
+												uploadToIPFS()
+												}}>
 											Create
 										</button>
 									</div>
