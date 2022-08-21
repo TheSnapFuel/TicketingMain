@@ -12,25 +12,22 @@ import { ethers } from 'ethers'
 import { create as ipfsHttpClient } from 'ipfs-http-client'
 import { useRouter } from 'next/router'
 import Web3Modal from 'web3modal'
-import {
-  marketplaceAddress
-} from '../../../config'
-import Market from '../../../artifacts/contracts/Market.sol/Market.json'
+import {massEventAddress} from '../../../config'
+import MassEvent from '../../../artifacts/contracts/MassEvent.sol/MassEvent.json'
 import "react-datepicker/dist/react-datepicker.css";
 import {IPFS} from "ipfs";
 
 function CreateEvent() {
     const [selectedFile, setSelectedFile] = useState();
     const [checkFile, setCheckFile] = useState(false);
-
 	const [fileUrl, setFileUrl] = useState(null)
 	const router = useRouter()
-
+	let totalTickets = 0;
 	const projectId = '2DVzNQ8xp6M2rGi4zNQyjcx2R5Z';
 	const projectSecret = '5593327fe5e787463b314b16d7ce21aa';
 	const auth = 'Basic ' + Buffer.from(projectId + ':' + projectSecret).toString('base64');
+	let globalTickets = {};
 	
-
 	const client = ipfsHttpClient({
 		host: 'ipfs.infura.io',
 		port: 5001,
@@ -40,7 +37,6 @@ function CreateEvent() {
 		},
 	});
 
-	
 	let eventTypes = ['Concert', 'Sports', 'Comedy Night'];
 	let paymentTypes = ['Stripe', 'Paypal', 'Cash'];
 
@@ -119,11 +115,21 @@ function CreateEvent() {
 	async function createTickets(name,hrs,mins,organizer,description,eventType,price,supply,timings,locations,fromDate,toDate, fileUrl) {
 		// create tickets with json schema
 		// and return json
-		const tickets = []
-		var count = 0;
-		const numDays = moment(toDate).diff(moment(fromDate), 'days', false)
+		let tickets = [];
+		if (localStorage.getItem("tickets") == "{}") 
+		{
+			tickets = [];
+		}
+		else
+		{
+			console.log(localStorage.getItem("tickets"));
+			tickets = JSON.parse(localStorage.getItem("tickets"));
+		}
+		var count = tickets.length;
 		const formattedInitialDate = moment(fromDate).format('YYYY-MM-DD')
 		const formattedFinallDate = moment(toDate).format('YYYY-MM-DD')
+		const numDays = moment(formattedFinallDate).diff(moment(formattedInitialDate), 'days', false) + 1;
+		console.log(numDays+"asd");
 		for(let day = 0; day < numDays; day++)
 		{
 			for (const location of locations)
@@ -166,34 +172,22 @@ function CreateEvent() {
 				}
 			}
 		}
+		totalTickets = count;
+		globalTickets = tickets;
 		return tickets
 	}
 
 
 	async function uploadToIPFS() {
-		// const { supply } = supply
-		// const { timings} = timings
-		// const { locations } = locations
-		// const data = JSON.stringify({
-		// 	name, length, organizer, description, fromDate, toDate, location, ticket, price, image: fileUrl
-		//   })
-		// console.log(data)
-		// 	const [formInput, updateFormInput] = useState({name: '', hrs: '', mins: '', organizer: '', description: '', eventType: '', fromDate: '', toDate: '', price: ''});
-
 		const{name, hrs, mins, organizer, description, eventType, price} = formInput
 		const fromDateFormat = moment(fromDate).format('DD-MM-YYYY')
 		const toDateFormat = moment(toDate).format('DD-MM-YYYY')
 		if (!name || !hrs || !mins || !organizer || !description || !eventType || !fromDateFormat || !toDateFormat || !price || !supply || !timings || !locations ) return;
-		console.log(1)
 		const data = JSON.stringify({
 			name, length: `${hrs}:${mins}`, organizer, description, supply, timings, location, price, image: fileUrl
 		  })
-		/* first, upload to IPFS */
+
 		try {
-		//   const added = await client.add(data)
-		//   const url = `https://snapfuel.infura-ipfs.io/ipfs/${added.path}`
-		//   /* after file is uploaded to IPFS, return the URL to use it in the transaction */
-		//   console.log(url)
 		  const files = await createTickets(name,hrs,mins,organizer,description,eventType,price,supply,timings,locations,fromDate,toDate,fileUrl)
 		  const addedFiles = new Array()
 		  for await (const result of client.addAll(files)) {
@@ -202,26 +196,29 @@ function CreateEvent() {
 		  const fileCID = addedFiles[addedFiles.length - 1].cid.toString()
 		  const url = `https://snapfuel.infura-ipfs.io/ipfs/${fileCID}`
 		  console.log(url)
+		  console.log(totalTickets)
 		  return url
 		} catch (error) {
 		  console.log('Error uploading file: ', error)
 		}  
 	  }
 	async function listTicketForSale() {
-		const url = await uploadToIPFS()
+		const urlV = await uploadToIPFS()
 		const web3Modal = new Web3Modal()
 		const connection = await web3Modal.connect()
 		const provider = new ethers.providers.Web3Provider(connection)
 		const signer = provider.getSigner()
-
-		/* next, create the item */
-		const price = ethers.utils.parseUnits(formInput.price, 'ether')
-		let contract = new ethers.Contract(marketplaceAddress, Market.abi, signer)
+		const{price} = formInput
+		console.log(price)
+		const stringPrice = ethers.utils.formatEther(100)
+		let contractPrice = ethers.utils.parseUnits(stringPrice, 'ether')
+		let contract = new ethers.Contract(massEventAddress, MassEvent.abi, signer)
 		let listingPrice = await contract.getListingPrice()
-		listingPrice = listingPrice.toString()
-
-		let transaction = await contract.createToken(url, price, { value: listingPrice })
+		listingPrice = (listingPrice*totalTickets).toString()
+		let transaction = await contract.addEvent(urlV+"{id}.json", totalTickets, contractPrice, { value: listingPrice })
 		await transaction.wait()
+		localStorage.setItem('tickets', JSON.stringify(globalTickets));
+		// console.log(globalTickets)
 		router.push('/booking')
 		}
 
@@ -527,10 +524,10 @@ function CreateEvent() {
 									<hr className="mt-4 border-[#292b2e] mb-8" />
 								</div>
 								<div className="col-span-12">
-									<label htmlFor="status">Status:</label>
+									<label htmlFor="status">Visibility:</label>
 									<div className="flex items-center justify-between">
 										<span className="text-sm text-[#585757]">
-											Visibility in marketplace
+											Set the visibility of your ticket
 										</span>
 										<label
 											htmlFor="status"
@@ -580,8 +577,9 @@ function CreateEvent() {
 											onClick={() => 
 												{
 													// setSuccess(true);
-												// listTicketForSale()
-												uploadToIPFS()
+												listTicketForSale()
+												// createTickets()
+												// uploadToIPFS()
 												}}>
 											Create
 										</button>

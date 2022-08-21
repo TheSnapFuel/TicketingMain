@@ -7,8 +7,49 @@ import Scrollspy from 'react-scrollspy';
 import styles from '../../components/Booking/Booking.module.scss';
 import Link from 'next/link';
 
+import { ethers } from 'ethers'
+import { useEffect, useState } from 'react'
+import axios from 'axios'
+import Web3Modal from 'web3modal'
+import {massEventAddress} from '../../../config'
+import MassEvent from '../../../artifacts/contracts/MassEvent.sol/MassEvent.json'
 
 function Booking() {
+	const [tickets, setTickets] = useState([])
+	const [loadingState, setLoadingState] = useState('not-loaded')
+	useEffect(() => {
+		loadNFTs()
+	  }, [])
+	async function loadNFTs() {
+	const web3Modal = new Web3Modal({
+		network: 'mainnet',
+		cacheProvider: true,
+	})
+	const connection = await web3Modal.connect()
+	const provider = new ethers.providers.Web3Provider(connection)
+	const signer = provider.getSigner()
+
+	const contract = new ethers.Contract(massEventAddress, MassEvent.abi, signer)
+	const data = await contract.getTotalTickets()
+
+	// const items = await Promise.all(data.map(async i => {
+	// 	const tokenUri = await contract.tokenURI(i.tokenId)
+	// 	const meta = await axios.get(tokenUri)
+	// 	let price = ethers.utils.formatUnits(i.price.toString(), 'ether')
+	// 	let item = {
+	// 	price,
+	// 	tokenId: i.tokenId.toNumber(),
+	// 	seller: i.seller,
+	// 	owner: i.owner,
+	// 	image: meta.data.image,
+	// 	}
+	// 	return item
+	// }
+	// ))
+
+	setTickets(items)
+	setLoadingState('loaded') 
+	}
 	const itemData = [
 		{
 			index: 1,
@@ -72,6 +113,36 @@ function Booking() {
 			))}
 		</>
 	);
+	if (loadingState === 'loaded' && !tickets.length) 
+	return (
+		<div className="p-4 relative">
+		<div className="my-4 mx-8">
+			<Header title="Booking" />
+			<div className="w-full flex relative my-4 p-4">
+				<div className="max-w-2xl mx-auto">
+					<form className="flex items-center">
+						<div className="relative w-80">
+							<div className="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
+							</div>
+
+						</div>
+						<div className="text-8xl pr-96">
+							No Tickets Found
+						</div>
+					</form>
+				</div>
+				<div className="absolute right-0 pr-4">
+					<Link href="/booking/new">
+						<a className="rounded-full bg-[#22A6B3] px-4 py-2 text-sm transform duration-200 hover:scale-110 block">
+							Generate tickets
+						</a>
+					</Link>
+				</div>
+			</div>
+		</div>
+	</div>
+	)
+
 	return (
 		<div className="p-4 relative">
 			<div className="my-4 mx-8">

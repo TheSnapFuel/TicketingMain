@@ -23,11 +23,13 @@
   "dependencies": {
     "@heroicons/react": "^1.0.6",
     "@nomiclabs/hardhat-waffle": "^2.0.3",
+    "@reduxjs/toolkit": "^1.8.5",
     "chart.js": "^3.9.1",
     "ethers": "^5.4.7",
     "framer-motion": "^7.0.0",
     "hardhat": "^2.9.9",
     "interface-ipfs-core": "^0.155.2",
+    "ipfs": "^0.63.5",
     "moment": "^2.29.4",
     "next": "12.2.4",
     "react": "18.2.0",
