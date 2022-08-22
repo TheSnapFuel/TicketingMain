@@ -35,5 +35,5 @@ next-env.d.ts
 
 #Hardhat files
 cache
-artifacts
+# artifacts
 
