@@ -91,9 +91,11 @@ function Sidebar() {
 			<div
 				id="sidebar"
 				className={`w-16 ${styles['side-bg']} group bg-[#11101D] h-screen flex flex-col justify-between pt-6 fixed top-0 left-0 transition-all duration-500 overflow-hidden z-1000 hover:w-56`}>
-				<div className="sidebar-logo text-center w-full flex justify-center px-2">
-					<img src="/images/icons/snap.svg" className="w-10 h-auto" />
-				</div>
+				
+					<div className="sidebar-logo text-center w-full flex justify-center px-2">
+						<Link href="/"><img src="/images/icons/snap.svg" className="w-10 h-auto" /></Link>
+					</div>
+				
 				<div className="sidebar-nav px-2 group-hover:px-4 duration-500">
 					<ul className="flex flex-col" id="nav-list">
 						{links.map((link, index) => (

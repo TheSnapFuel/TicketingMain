@@ -96,3 +96,84 @@ input[type="number"] {
 	transition: all;
     }
 
+
+	.hero-card-right {
+		transform: skew(-0.29rad, 0.23rad) translate(40%, -40%);
+		animation: floating-right;
+		animation-duration: 3s;
+		animation-delay: -1s;
+		animation-iteration-count: infinite;
+		animation-timing-function: ease-in-out;
+		/* style={{ transform: 'matrix(0.96, 0.23, -0.29, 0.97, 0, 0)' }} */
+	}
+
+
+	.hero-card-left {
+		transform: skew(0.14rad, -0.01rad)  translate(-40%, -40%);
+		animation: floating-left;
+		animation-duration: 3s;
+		animation-delay: -2s;
+		animation-iteration-count: infinite;
+		animation-timing-function: ease-in-out;
+		/* style={{ transform: 'matrix(0.99, -0.01, 0.14, 1, 0, 0)' }} */
+	}
+
+	@keyframes floating {
+		0% { transform: translate(0,  0px) scale(90%); }
+		50%  { transform: translate(0, 15px) scale(90%); }
+		100%   { transform: translate(0, -0px) scale(90%); }   
+	}
+
+	@keyframes floating-right {
+		0% { transform: skew(-0.29rad, 0.23rad) translate(40%, -40%);}
+		50%  { transform: skew(-0.29rad, 0.23rad) translate(40%, calc(-40% + 15px)); }
+		100%   { transform: skew(-0.29rad, 0.23rad) translate(40%, -40%); }   
+	}
+
+	@keyframes floating-left {
+		0% { transform: skew(0.14rad, -0.01rad) translate(-40%, -40%);}
+		50%  { transform: skew(0.14rad, -0.01rad) translate(-40%, calc(-40% + 15px)); }
+		100%   { transform: skew(0.14rad, -0.01rad) translate(-40%, -40%); }   
+	}
+
+	.floating {
+	animation-name: floating;
+    animation-duration: 3s;
+    animation-iteration-count: infinite;
+    animation-timing-function: ease-in-out;
+
+	}
+
+	.item-card-wrapper {
+		-webkit-box-reflect: below 25px linear-gradient(to bottom, rgba(0,0,0,0.0), rgba(0,0,0,0.1));
+	}
+
+	.line-svg {
+		animation: dash-move 30s linear infinite;
+	}
+
+	@keyframes dash-move {
+		0% {stroke-dashoffset: 1000px;}
+		100% {stroke-dashoffset: 0;}
+	}
+
+	@keyframes dash-move-reverse {
+		0% {stroke-dashoffset: 0;}
+		100% {stroke-dashoffset: 1000px;}
+	}
+
+	.line-svg-reverse{
+		animation: dash-move-reverse 30s linear infinite;
+	}
+
+	.button-fill-left {
+		background: linear-gradient(to right, #ffffff 0%, #ffffff 50%, #22a6b3 50%, #22a6b3 100%);
+    background-size: 200% 100%;
+    background-position: 100% 0;
+    transition: background-position 0.3s;
+
+	}
+
+	.button-fill-left:hover{
+		background-position:0 0;
+	}
