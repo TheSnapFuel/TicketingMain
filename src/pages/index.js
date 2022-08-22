@@ -36,7 +36,7 @@ export default function Home() {
 		{
 			img: '/images/person1.png',
 			name: 'Asim Jawahir',
-			description: 'Blockchain Developer',
+			description: 'Blockchain/Backend Developer',
 		},
 		{
 			img: '/images/person2.png',
@@ -46,7 +46,7 @@ export default function Home() {
 		{
 			img: '/images/person3.png',
 			name: "Nevan D'Souza",
-			description: 'Backend Developer',
+			description: 'Frontend Developer',
 		},
 	];
 	return (
