@@ -148,6 +148,7 @@ function CreateEvent() {
 										"name": "Seat No " + i,
 										"descrption": description,
 										"properties": {
+											"eventName": name,
 											"day": day,
 											"hrs": hrs,
 											"mins": mins,

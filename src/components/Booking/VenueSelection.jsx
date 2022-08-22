@@ -132,11 +132,7 @@ function VenueSelection({
 												: ''
 										} checked:bg-accent w-28 justify-center`}>
 										<p className="text-white text-sm text-center w-full">
-											{timing.getHours() % 12}:
-											{timing.getMinutes() > 9
-												? timing.getMinutes()
-												: '0' + timing.getMinutes()}{' '}
-											{timing.getHours() >= 12 ? 'PM' : 'AM'}
+											{timing}			
 										</p>
 										<input
 											type="checkbox"
