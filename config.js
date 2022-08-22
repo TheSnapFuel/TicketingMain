@@ -1,3 +1,3 @@
 
-  export const massEventAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+  export const massEventAddress = "0x7B5F1a845c1427e93DEb1ef4F4700907DfBB5703"
   

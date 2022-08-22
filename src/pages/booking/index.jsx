@@ -23,7 +23,7 @@ function Booking() {
 	  }, [])
 	async function loadTickets() {
 	const web3Modal = new Web3Modal({
-		network: 'mainnet',
+		network: 'localhost',
 		cacheProvider: true,
 	})
 
@@ -38,7 +38,7 @@ function Booking() {
 	// let jsonIPFS = contractURI.replace("{id}", "/0")
 	// const ticketsFromContract = await fetch(jsonIPFS)
 	// const jsonTickets = await ticketsFromContract.json()
-
+	console.log(data)
 	const items = await Promise.all(data.map(async i => {
 
 		let indexNeeded = i.ticketsIDStart.toNumber()

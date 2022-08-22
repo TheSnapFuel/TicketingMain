@@ -57,7 +57,7 @@ function VenueSelection({
 								{dates.map((possibleDate, index) => (
 									<label
 										htmlFor={possibleDate.toString()}
-										className={`min-w-24 h-24 bg-transparent border-2 border-accent rounded-xl flex flex-col items-center justify-center cursor-pointer duration-200 ${
+										className={`min-w-24 h-24 border-2 border-accent rounded-xl flex flex-col items-center justify-center cursor-pointer duration-200 ${
 											dateSelected === index ? 'bg-accent border-0' : ''
 										} checked:bg-accent`}
 										key={`dates-${index}`}>
@@ -71,6 +71,8 @@ function VenueSelection({
 											id={possibleDate.toString()}
 											onChange={e => {
 												setDateSelected(index);
+												localStorage
+												console.log(index);
 												setPickDate(null);
 											}}
 										/>
@@ -80,7 +82,7 @@ function VenueSelection({
 						</div>
 						<label
 							htmlFor={'pick-date'}
-							className={`w-24 p-2 h-24 bg-transparent border-2 border-accent rounded-xl flex flex-col items-center justify-center cursor-pointer duration-200 ${
+							className={`w-24 p-2 h-24 border-2 border-accent rounded-xl flex flex-col items-center justify-center cursor-pointer duration-200 ${
 								pickDate ? 'bg-accent border-0' : ''
 							} checked:bg-accent`}
 							key={`pick-date}`}>
@@ -126,13 +128,13 @@ function VenueSelection({
 									<label
 										key={idx}
 										htmlFor={index + timing.toString() + idx}
-										className={`flex items-center border border-accent rounded-2xl py-2 px-4 mx-2 my-1 bg-transparent cursor-pointer duration-200 ${
+										className={`flex items-center border border-accent rounded-2xl py-2 px-4 mx-2 my-1 cursor-pointer duration-200 ${
 											timingSelected[0] === index && timingSelected[1] === idx
 												? 'bg-accent'
 												: ''
 										} checked:bg-accent w-28 justify-center`}>
 										<p className="text-white text-sm text-center w-full">
-											{timing}			
+											{timing}
 										</p>
 										<input
 											type="checkbox"
@@ -144,6 +146,7 @@ function VenueSelection({
 												newSelected[1] = idx;
 												setTimingSelected(newSelected);
 												console.log(newSelected);
+												localStorage.setItem("selected", JSON.stringify(newSelected));
 											}}
 										/>
 									</label>
@@ -175,3 +178,4 @@ function VenueSelection({
 }
 
 export default VenueSelection;
+

@@ -1,23 +1,20 @@
-import Link from 'next/link';
 import React from 'react';
-import {
-	AiFillStar,
-	AiOutlineClockCircle,
-	AiOutlineStar,
-} from 'react-icons/ai';
-import BookingRow from '../../components/Booking/BookingRow';
-import Cover from '../../components/Booking/Cover';
-import EventDetails from '../../components/Booking/EventDetails';
+import BookingModal from '../../components/Booking/BookingModal';
+import VenueSelection from '../../components/Booking/VenueSelection';
 import Header from '../../components/Profile/Header';
+import NumberInput from '../../utils/NumberInput';
+import { SeatPicker } from '../../components/SeatPicker/SeatPicker';
+import { IoIosArrowDown } from 'react-icons/io';
 
-import { useRouter } from "next/router";
-import { ethers } from "ethers";
+import { ethers } from 'ethers';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import Web3Modal from 'web3modal';
 import {massEventAddress} from '../../../config';
 import MassEvent from '../../../artifacts/contracts/MassEvent.sol/MassEvent.json';
 import moment from 'moment';
+import { useRouter } from "next/router";
+
 function EventPage() {
 	const [tickets, setTickets] = useState([])
 	const [loadingState, setLoadingState] = useState('not-loaded')
@@ -34,6 +31,9 @@ function EventPage() {
 		network: 'mainnet',
 		cacheProvider: true,
 	})
+	// min value = 1 max value = 100
+
+
 	const connection = await web3Modal.connect()
 	const provider = new ethers.providers.Web3Provider(connection)
 	const signer = provider.getSigner()
@@ -41,7 +41,6 @@ function EventPage() {
 	const contract = new ethers.Contract(massEventAddress, MassEvent.abi, signer)
 	const data = await contract.fetchEvents()
 	let contractURI = await contract.uri(0)
-
 	let jsonIPFS = contractURI.replace("{id}", "/"+ticketCurr)
 	const ticketsFromContract = await fetch(jsonIPFS)
 	const jsonTicket = await ticketsFromContract.json()
@@ -51,6 +50,7 @@ function EventPage() {
 		let jsonIPFS = contractURI.replace("{id}", "/"+indexNeeded)
 		const ticketsFromContract = await fetch(jsonIPFS)
 		const jsonTicket = await ticketsFromContract.json()
+		// console.log(jsonTicket)
 		let Formattedprice = ethers.utils.formatUnits((i.price*10000000000000000).toString(), 'ether')
 		let item = {
 		index: i.eventId.toNumber()+1,
@@ -60,9 +60,12 @@ function EventPage() {
 		price: Formattedprice+" ETH",
 		seats: jsonTicket['properties']['supply'],
 		fromDate: jsonTicket['properties']['fromDate'],
+		toDate: jsonTicket['properties']['toDate'],
 		hrs: jsonTicket['properties']['hrs'],
 		mins: jsonTicket['properties']['mins'],
 		descrption: jsonTicket['descrption'],
+		timings: jsonTicket['properties']['AvailableTimings'],
+		locs: jsonTicket['properties']['AvailableLocs'],
 		url: '/'+(i.eventId).toString()
 		}
 		return item
@@ -74,18 +77,50 @@ function EventPage() {
 	setLoadingState('loaded') 
 	setTickets(items)
 	}
+	const today = new Date();
+	const dates = Array.from({ length: 7 }, (_, i) => {
+		return new Date(today.getTime() + i * 24 * 60 * 60 * 1000);
+	});
+	
+	async function buyNFT(){
 
-	console.log(tickets.length>0);
+		let numofSeats = tickets.length>0?tickets[ticketCurr]['seats']:0
+		let numofTimings = tickets.length>0?tickets[ticketCurr]['timings'].length:0
+		let numofLocs = tickets.length>0?tickets[ticketCurr]['locs'].length:0
+		let numofDate = tickets.length>moment(tickets[ticketCurr]['fromDate']).diff(moment(tickets[ticketCurr]['toDate']), 'days').toNumber?dates.length:0
+		let eventData = JSON.parse(localStorage.getItem('selected'))
+		let seat_id_final = localStorage.getItem('seat')-1 + (numofSeats * eventData[1]) + (numofSeats * numofTimings * eventData[0]) + (numofSeats * numofTimings * numofLocs * dateSelected) + (numofSeats * numofTimings * numofLocs * dateSelected)
+		
+		const web3Modal = new Web3Modal({
+			network: 'mainnet',
+			cacheProvider: true,
+		})
+		const connection = await web3Modal.connect()
+		const provider = new ethers.providers.Web3Provider(connection)
+		const signer = provider.getSigner()
+		const contract = new ethers.Contract(massEventAddress, MassEvent.abi, signer)
+		let listingPrice = await contract.getListingPrice()
+		listingPrice = (listingPrice*40).toString()
+		await contract.buyTicket(4, {value: listingPrice})
+		router.push('/booking')
+	}
+
 	const event = {
+		// title: ticket['properties']['eventName'],
+		// img: ticket['properties']['image'],
+		// coverImg: '/images/cover.png',
+		// date: moment(ticket['properties']['date']).format('MMMM Do YYYY'),
+		// rating: '4.5',
+		// playbackTimeHr: ticket['properties']['hrs'],
+		// playbackTimeMin: ticket['properties']['mins'],
 		title: tickets.length>0?tickets[ticketCurr]['title']:'Error',
 		img: tickets.length>0?tickets[ticketCurr]['img']:'Error',
 		coverImg: '/images/cover.png',
-		date: tickets.length>0?tickets[ticketCurr]['fromDate']:'Error',
-		rating: '4.5',
+		date: tickets.length>0?moment(tickets[ticketCurr]['fromDate']).format('MMMM Do YYYY'):'Error',
+		rating: tickets.length>0?'4.5':'Error',
 		playbackTimeHr: tickets.length>0?tickets[ticketCurr]['hrs']:'Error',
 		playbackTimeMin: tickets.length>0?tickets[ticketCurr]['mins']:'Error',
 		genres: ['Drama', 'Indie'],
-
 		cast: [
 			{
 				name: 'Mahershala Ali',
@@ -96,7 +131,8 @@ function EventPage() {
 				img: '/images/cast2.jpeg',
 			},
 		],
-		description: tickets.length>0?tickets[ticketCurr]["descrption"]:'Error',
+		description:
+			'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.',
 		reviews: [
 			{
 				name: 'Mahershala Ali',
@@ -125,102 +161,341 @@ function EventPage() {
 		],
 		totalReviewCount: 10000,
 	};
-	const {
-		title,
-		img: imgSrc,
-		coverImg,
-		date,
-		genres,
-		rating,
-		playbackTimeHr,
-		playbackTimeMin,
-		cast,
-		description,
-		reviews,
-		totalReviewCount,
-	} = event;
-	if (tickets.length === 0 || loadingState === 'not-loaded') return (
-		<div>
-			Error 404
-		</div>
-	);
+	const { title } = event;
+	let timingAdded = []
+	for(const x of tickets.length>0?tickets[ticketCurr]['timings']:"")
+	{
+		timingAdded.push(x)
+	}
+
+	// const venues = [
+	// 	{
+	// 		title: 'Theatre 1',
+	// 		timings: timingAdded,
+	// 		price: 'Rs. 1000',
+	// 		seats: true,
+	// 	},
+	// 	{
+	// 		title: 'Theatre 1',
+	// 		timings: timingAdded,
+	// 		price: 'Rs. 1000',
+	// 		seats: false,
+	// 	},
+	// ];
+	const venues = []
+
+	let temp = {}
+	for(const x of tickets.length>0?tickets[ticketCurr]['locs']:"")
+	{
+		temp = {}
+		temp['title'] = x
+		temp['timings'] = timingAdded
+		temp['price'] = tickets[ticketCurr]['price']
+		temp['seats'] = true
+		venues.push(temp)
+	}
+	const rows = [
+		// [
+		// 	{ id: 1, number: 1 },
+		// 	{ id: 2, number: 2 },
+		// 	{ id: 3, number: 3 },
+		// 	{ id: 4, number: 4 },
+		// 	{ id: 5, number: 5 },
+		// 	{ id: 6, number: 6 },
+		// ],
+	];
+
+	temp = []
+	let numLoop = tickets.length>0?tickets[ticketCurr]['seats']:0
+	console.log("aaaa",tickets)
+	for (var i = 0; i < numLoop; i++) {
+		temp.push(
+			{
+				id: i+1,
+				number: i+1,
+			}
+		)
+	}
+	rows.push(temp)
+	const [timingSelected, setTimingSelected] = React.useState([-1, -1]);
+	const [dateSelected, setDateSelected] = React.useState(0);
+	const [stage, setStage] = React.useState(1);
+	const [numTickets, setNumTickets] = React.useState(1);
+	const [seatLoading, setSeatLoading] = React.useState(false);
+
+	const headerTitles = ['', 'Buy Now', 'Buy Now', 'Payment', 'Buy Now'];
+	let id = -1;
+	const addSeatCallback = async (
+		{ row, number, id },
+		addCb,
+		params,
+		removeCb
+	) => {
+		setSeatLoading(true);
+
+		if (removeCb) {
+			await new Promise(resolve => setTimeout(resolve, 10));
+			console.log(
+				`Removed seat ${params.number}, row ${params.row}, id ${params.id}`
+			);
+			removeCb(params.row, params.number);
+		}
+		await new Promise(resolve => setTimeout(resolve, 10));
+		console.log(`Added seat ${number}, row ${row}, id ${id}`);
+		localStorage.setItem('seat', id);
+		const newTooltip = ``;
+		addCb(row, number, id, newTooltip);
+		setSeatLoading(false);
+	};
+
+	const removeSeatCallback = async ({ row, number, id }, removeCb) => {
+		setSeatLoading(true);
+
+		await new Promise(resolve => setTimeout(resolve, 10));
+		console.log(`Removed seat ${number}, row ${row}, id ${id}`);
+		// A value of null will reset the tooltip to the original while '' will hide the tooltip
+		const newTooltip = ['A', 'B', 'C'].includes(row) ? null : '';
+		removeCb(row, number, newTooltip);
+		setSeatLoading(false);
+	};
+
+	const paymentMethods = [
+		{
+			title: 'Snap Wallet',
+			logo: '/images/icons/snap.svg',
+			subtitle: 'Rahul_P',
+		},
+		{
+			title: 'Stripe',
+			logo: '/images/icons/stripe.svg',
+			subtitle: '',
+		},
+		{
+			title: 'UPI',
+			logo: '/images/icons/upi.svg',
+			subtitle: '',
+		},
+		{
+			title: 'Paypal',
+			logo: '/images/icons/paypal.svg',
+			subtitle: '',
+		},
+	];
+
 	return (
-		<div className="p-4 relative">
-			<div className="my-4 mx-8">
-				<Header title={''} />
-				<Cover coverImg={coverImg} />
-				<div className="w-full my-2 px-8">
-					<EventDetails
-						imgSrc={imgSrc}
-						title={title}
-						genres={genres}
-						playbackTimeHr={playbackTimeHr}
-						playbackTimeMin={playbackTimeMin}
-						date={date}>
-						<div>
-							<Link href="1/book">
-								<a className="bg-accentDark px-4 py-2 rounded-2xl text-xl transform hover:scale-110 cursor-pointer duration-200 block">
-									Book Tickets
-								</a>
-							</Link>
-						</div>
-					</EventDetails>
-					<div className="w-full mt-8">
-						<h2 className="text-2xl mb-2">About Movie</h2>
-						<p className="opacity-90">{description}</p>
-					</div>
-					<div className="w-full mt-6">
-						<h2 className="text-2xl mb-2">Cast</h2>
-						<div className="flex items-center">
-							{cast.map((cast, index) => (
-								<div
-									key={index}
-									className="flex flex-col justify-between items-center my-2 mr-3 px-4 max-w-48">
-									<img
-										src={cast.img}
-										className="w-24 h-32 object-cover rounded-3xl"></img>
-									<h1 className="text-lg mt-2 text-center">{cast.name}</h1>
+		<div className="flex flex-col p-4 relative h-screen">
+			<div className="my-4 mx-8 h-full">
+				<Header title={headerTitles[stage - 1]} />
+				{stage == 1 && (
+					<VenueSelection
+						event={event}
+						venues={venues}
+						dates={dates}
+						timingSelected={timingSelected}
+						setDateSelected={setDateSelected}
+						dateSelected={dateSelected}
+						setTimingSelected={setTimingSelected}
+						setStage={setStage}
+					/>
+				)}
+				{stage == 2 && (
+					<div className="flex w-full h-full items-center justify-between flex-col">
+						<BookingModal>
+							<div className="w-full h-full flex flex-col justify-between items-center pt-8 pb-2">
+								<h1 className="text-4xl font-bold text-center">
+									Select the number of tickets
+								</h1>
+								<div>
+									<NumberInput value={numTickets} setValue={setNumTickets} />
 								</div>
-							))}
+								<div>
+									<p className="text-xs font-light">
+										Note: You can buy upto a maximum of 1(in Beta) tickets only
+									</p>
+								</div>
+							</div>
+						</BookingModal>
+						<div className="w-full flex justify-between pr-8 mb-12">
+							<button
+								className="bg-black bg-opacity-20 rounded-lg px-4 py-2 border-0 duration-200 hover:scale-110 w-48 ml-6"
+								onClick={() => {
+									setStage(1);
+								}}>
+								Back
+							</button>
+							<button
+								className="bg-accent text-white py-2 border-0 px-4 rounded-lg duration-200 hover:scale-110 transform w-48"
+								onClick={() => {
+									setStage(3);
+								}}>
+								Select Seats
+							</button>
 						</div>
 					</div>
-					<div className="w-full mt-6">
-						<div className="flex justify-between mb-2 items-center">
-							<h2 className="text-2xl">Reviews (10k+)</h2>
-							<Link href="#">
-								<a className="text-lg underline opacity-60 pr-12 hover:opacity-90 duration-400">
-									Attended the event? Leave a rating!
-								</a>
-							</Link>
+				)}
+				{stage == 3 && (
+					<div className="w-full flex flex-col items-center justify-center pr-16">
+						<div className="relative">
+							<p className="text-center text-xs">Screen this side</p>
+							<div className="relative mb-32 mt-8 w-96">
+								<img
+									src="/images/screen/1.png"
+									className="absolute top-0 left-0"
+								/>
+								<img
+									src="/images/screen/2.png"
+									className="absolute -top-3 left-0"
+								/>
+								<img
+									src="/images/screen/3.png"
+									className="absolute -top-3 left-0"
+								/>
+							</div>
 						</div>
-						<div className="-ml-12">
-							<BookingRow>
-								{reviews.map((review, index) => (
+						<SeatPicker
+							addSeatCallback={addSeatCallback}
+							removeSeatCallback={removeSeatCallback}
+							rows={rows}
+							maxReservableSeats={3}
+							loading={seatLoading}
+							alpha
+							continuous
+							visible
+						/>
+						<h1 className="mt-8 text-3xl">Select your seats</h1>
+						<div className="w-full flex justify-center mt-12 mb-4">
+							<button
+								className="bg-accent text-white py-2 border-0 px-4 rounded-lg duration-200 hover:scale-110 transform w-48"
+								onClick={() => {
+									setStage(4);
+								}}>
+								Pay Now
+							</button>
+						</div>
+						<div className="w-full flex justify-center">
+							<button
+								className="rounded-lg px-4 py-2 border-0 duration-200 hover:scale-110 w-48"
+								onClick={() => {
+									setStage(2);
+								}}>
+								Back
+							</button>
+						</div>
+					</div>
+				)}
+				{stage == 4 && (
+					<div className="grid grid-cols-12 ml-4 mt-8">
+						<div className="col-span-5">
+							<h2 className="text-xl">Payment Summary</h2>
+							<div className="flex flex-col my-4 px-6 py-6 bg-[#282b2e] rounded-xl">
+								<div className="flex items-center">
+									<img
+										src="/images/movie.jpg"
+										className="w-24 h-32 rounded-3xl m-2 p-2"
+									/>
+									<div>
+										<h2 className="text-lg">{title}</h2>
+										<p className="opacity-60 text-sm mt-2">
+											This is some about the movie.
+										</p>
+									</div>
+								</div>
+								<div className="pl-4 pr-6 text-[#a7a7a7]  font-light">
+									<hr className="border-[#a7a7a7] mt-2 mb-4" />
+									<div className="flex pb-4 w-full justify-between">
+										<p>Subtotal</p>
+										<p className="text-accent">{tickets.length>0?tickets[ticketCurr]['price']:'Error'}</p>
+									</div>
+									{/* <div className="flex pb-4 w-full justify-between">
+										<p>Convenience Fees</p>
+										<p className="text-accent">$2</p>
+									</div>
+									<div className="flex pb-4 w-full justify-between">
+										<p>Taxes</p>
+										<p className="text-accent">3.2%</p>
+									</div> */}
+									<hr className="border-[#a7a7a7] mb-2" />
+									<div className="flex pt-2 pb-4 w-full justify-between">
+										<p>Grand Total</p>
+										<p className="text-accent">{tickets.length>0?tickets[ticketCurr]['price']:'Error'}</p>
+									</div>
+								</div>
+								<div className="flex justify-center my-8">
+									<button
+										className="bg-accent py-2 px-6 w-56 rounded-lg duration-200 hover:scale-110"
+										style={{
+											boxShadow: '0px 0px 30px -15px rgba(126, 199, 206, 1)',
+											webkitBoxShadow:
+												'0px 0px 30px -15px rgba(126, 199, 206, 1)',
+											mozBoxShadow: '0px 0px 30px -15px rgba(126, 199, 206, 1)',
+										}}
+										onClick={e => {
+											buyNFT();
+										}}>
+										Make payment
+									</button>
+								</div>
+							</div>
+						</div>
+						<div className="col-span-7 ml-12">
+							<h2 className="text-xl">Payment Methods</h2>
+							<div className="flex flex-col my-4">
+								{paymentMethods.map((method, index) => (
 									<div
-										className="py-2 px-6 border mr-4 rounded-2xl min-w-half h-48 mb-4"
+										className="text-sm flex bg-[#1d1f21] items-center px-4 py-4 rounded-lg my-2 max-w-128"
 										key={index}>
-										<div className="flex justify-between items-center mb-4 mt-2">
-											<h3 className="text-lg">{review.name}</h3>
-											<span className="flex items-center">
-												{[...Array(review.rating)].map((_, i) => (
-													<AiFillStar key={i} className="h-6 w-6 pr-1" />
-												))}
-												{[...Array(5 - review.rating)].map((_, i) => (
-													<AiOutlineStar key={i} className="h-6 w-6 pr-1" />
-												))}
-											</span>
-										</div>
-										<div className="w-full mb-4">
-											<p className="opacity-90 text-sm line-clamp-4">
-												{review.description}
-											</p>
-										</div>
+										<input
+											type="radio"
+											id={`payment-${method.title}`}
+											name="payment"
+											className="radio"
+										/>
+										<label
+											htmlFor={`payment-${method.title}`}
+											className="flex ml-4 items-center justify-between w-full cursor-pointer">
+											<div className="flex items-center">
+												<img src={method.logo} className="h-12 mr-4 max-w-16" />
+												<div>
+													<h3 className="font-light text-lg">{method.title}</h3>
+													<p className="text-[#464849] text-xs">
+														{method.subtitle}
+													</p>
+												</div>
+											</div>
+											<div>
+												<IoIosArrowDown className="text-accent" />
+											</div>
+										</label>
 									</div>
 								))}
-							</BookingRow>
+							</div>
 						</div>
 					</div>
-				</div>
+				)}
+				{stage == 5 && (
+					<>
+						<BookingModal>
+							<div className="w-full h-full flex flex-col justify-between items-center pt-8 pb-6">
+								<h1 className="text-4xl font-bold text-center">
+									Booking Summary
+								</h1>
+								<p className="font-light text-xl text-center">
+									Tickets: 3<br />
+									Seats: E2, E3, E4 ($30)
+									<br />
+									Convenience Fees: $1
+									<br />
+									Total Cost: $31
+								</p>
+								<p className="text-xs font-light text-center opacity-80">
+									Your tickets are accessible on your wallet.
+									<br />
+									Present them at the event for your entry.
+								</p>
+							</div>
+						</BookingModal>
+					</>
+				)}
 			</div>
 		</div>
 	);

@@ -173,16 +173,17 @@ function CreateEvent() {
 				}
 			}
 		}
+		// console.log("count:");
 		totalTickets = count;
 		globalTickets = tickets;
 		return tickets
 	}
 
-
 	async function uploadToIPFS() {
 		const{name, hrs, mins, organizer, description, eventType, price} = formInput
 		const fromDateFormat = moment(fromDate).format('DD-MM-YYYY')
 		const toDateFormat = moment(toDate).format('DD-MM-YYYY')
+		console.log((!name || !hrs || !mins || !organizer || !description || !eventType || !fromDateFormat || !toDateFormat || !price || !supply || !timings || !locations ) )
 		if (!name || !hrs || !mins || !organizer || !description || !eventType || !fromDateFormat || !toDateFormat || !price || !supply || !timings || !locations ) return;
 		const data = JSON.stringify({
 			name, length: `${hrs}:${mins}`, organizer, description, supply, timings, location, price, image: fileUrl
@@ -215,6 +216,8 @@ function CreateEvent() {
 		let contractPrice = ethers.utils.parseUnits(stringPrice, 'ether')
 		let contract = new ethers.Contract(massEventAddress, MassEvent.abi, signer)
 		let listingPrice = await contract.getListingPrice()
+		console.log('listingPrice', totalTickets)
+
 		listingPrice = (listingPrice*totalTickets).toString()
 		let transaction = await contract.addEvent(urlV+"{id}.json", totalTickets, contractPrice, { value: listingPrice })
 		await transaction.wait()

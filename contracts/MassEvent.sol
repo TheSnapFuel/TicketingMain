@@ -14,11 +14,13 @@ contract MassEvent is ERC1155, Ownable {
     mapping(uint256 => uint256) pricePerEvent;
     uint totalTickets = 0;
 
+    address public ownerAddr;
     uint256 listingPrice = 0.025 ether;
     using Counters for Counters.Counter;
     Counters.Counter private _eventIds;
 
     constructor() ERC1155(" ") {
+        ownerAddr = msg.sender;
     }
 
     mapping(uint256 => EventItem) private idToEventItem;
@@ -38,11 +40,17 @@ contract MassEvent is ERC1155, Ownable {
             totalTickets,
             numTickets
         );
+        for (uint i = 0; i < numTickets; i++) {
+            _mint(ownerAddr, totalTickets + i, 1, "");
+        }
         totalTickets += numTickets;
         pricePerEvent[_eventIds.current()] = price;
         ticketsPerEvent[_eventIds.current()] = numTickets;
         _setURI(updatedURI);
         _eventIds.increment();
+        // mint totalTickets tokens to the contract
+
+
         return _eventIds.current();
     }
 
@@ -60,7 +68,21 @@ contract MassEvent is ERC1155, Ownable {
         }
         return items;
     }
+    function buyTicket(uint256 ticketId) public payable {
+        // safeTransferFrom(ownerAddr, msg.sender, ticketId, 1, "0x0");
+    }
 
+    function fetchUserTickets(address user) public view returns(uint256[] memory) {
+        uint256[] memory userTickets = new uint256[](totalTickets);
+        uint256 userTicketsCount = 0;
+        for (uint i = 0; i < totalTickets; i++) {
+            if (balanceOf(user, i) == 1) {
+                userTickets[userTicketsCount] = i;
+                userTicketsCount++;
+            }
+        }
+        return userTickets;
+    }
     function getEventTickets(uint eventId) public view returns (uint) {
         return ticketsPerEvent[eventId];
     }

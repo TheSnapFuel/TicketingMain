@@ -8,13 +8,13 @@ module.exports = {
     hardhat: {
       chainId: 1337
     },
-    /*
     mumbai: {
       // Infura
       // url: `https://polygon-mumbai.infura.io/v3/${infuraId}`
-      url: "https://rpc-mumbai.matic.today",
-      accounts: [process.env.privateKey]
+      url: "https://polygon-mumbai.infura.io/v3/c87232efea3046708a204b8abf889cb3",
+      accounts: ["0x6e03ea41370f77eb9ec22630f060bed391edbf2049986aa9525532841f712232"]
     },
+    /*
     matic: {
       // Infura
       // url: `https://polygon-mainnet.infura.io/v3/${infuraId}`,
