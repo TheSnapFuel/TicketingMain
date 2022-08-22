@@ -14,7 +14,7 @@ contract MassEvent is ERC1155, Ownable {
     mapping(uint256 => uint256) pricePerEvent;
     uint totalTickets = 0;
 
-    uint256 listingPrice = 0.025 ether;
+    uint256 listingPrice = 0.00025 ether;
     using Counters for Counters.Counter;
     Counters.Counter private _eventIds;
 

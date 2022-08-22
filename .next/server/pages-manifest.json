@@ -1,6 +1,17 @@
 {
-  "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/[slug]": "pages/[slug].js"
+  "/[slug]/book": "pages/[slug]/book.html",
+  "/[slug]": "pages/[slug].html",
+  "/api/hello": "pages/api/hello.js",
+  "/booking/devReset": "pages/booking/devReset.html",
+  "/booking/new": "pages/booking/new.html",
+  "/booking": "pages/booking.html",
+  "/marketplace/[nft]/buy": "pages/marketplace/[nft]/buy.html",
+  "/": "pages/index.html",
+  "/marketplace/[nft]": "pages/marketplace/[nft].html",
+  "/marketplace": "pages/marketplace.html",
+  "/profile": "pages/profile.html",
+  "/_app": "pages/_app.js",
+  "/404": "pages/404.html"
 }
