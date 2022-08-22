@@ -528,7 +528,7 @@ export default function Home() {
 					))}
 				</div>
 			</section>
-			<div className="w-full flex items-center justify-center py-6 mt-16">
+			{/* <div className="w-full flex items-center justify-center py-6 mt-16">
 				<p className="text-center max-w-192 text-xl font-light">
 					Check out our{' '}
 					<a
@@ -538,7 +538,7 @@ export default function Home() {
 					</a>{' '}
 					to understand more about the product
 				</p>
-			</div>
+			</div> */}
 			<Footer />
 		</div>
 	);
